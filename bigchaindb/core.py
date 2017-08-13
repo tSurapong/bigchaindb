@@ -56,6 +56,7 @@ class Bigchain(object):
         self.me = public_key or bigchaindb.config['keypair']['public']
         self.me_private = private_key or bigchaindb.config['keypair']['private']
         self.nodes_except_me = keyring or bigchaindb.config['keyring']
+        self.peers = bigchaindb.config['peers']
 
         if backlog_reassign_delay is None:
             backlog_reassign_delay = bigchaindb.config['backlog_reassign_delay']
@@ -89,7 +90,10 @@ class Bigchain(object):
         Returns:
             dict: database response
         """
-        signed_transaction = signed_transaction.to_dict()
+        try:
+            signed_transaction = signed_transaction.to_dict()
+        except AttributeError:
+            pass
 
         # we will assign this transaction to `one` node. This way we make sure that there are no duplicate
         # transactions on the bigchain

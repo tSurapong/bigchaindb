@@ -81,6 +81,10 @@ config = {
         'private': None,
     },
     'keyring': [],
+    # list of peers, specified as strings holding all that is necessary to
+    # establish a connection with the peer (e.g.:
+    # 'scheme;//username:password@hostname:port')
+    'peers': [],
     'backlog_reassign_delay': 120,
     'log': {
         'file': log_config['handlers']['file']['filename'],
