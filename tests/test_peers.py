@@ -14,7 +14,7 @@ def test_peers(alice, bob):
     from bigchaindb.common.crypto import generate_key_pair
     alice, bob = generate_key_pair(), generate_key_pair()
 
-    TX_COUNT = 500
+    TX_COUNT = 50
     mdb1 = MongoClient('mdb-1')
     mdb2 = MongoClient('mdb-2')
     mdb3 = MongoClient('mdb-3')
@@ -35,15 +35,18 @@ def test_peers(alice, bob):
     mdb3_tx_batch = (next(mdb3_tx_generator) for _ in range(TX_COUNT))
 
     peer_txids = defaultdict(list)
+    all_txids = []
 
     def simulate_tx_stream(peer, tx_batch, *, delay=0.1):
         for tx in tx_batch:
             peer.bigchain.backlog.insert_one(tx)
             sleep(delay)
             peer_txids[peer.address].append(tx['id'])
+            all_txids.append(tx['id'])
 
     for peer in (mdb1, mdb2, mdb3):
         peer.bigchain.backlog.delete_many({})
+        sleep(0.5)
         assert peer.bigchain.backlog.count() == 0
 
     mdb2_thread = Thread(target=simulate_tx_stream,
@@ -62,19 +65,23 @@ def test_peers(alice, bob):
               str(TX_COUNT - len(peer_txids[mdb3.address])), end='\n\n')
         sleep(1)
 
-    timeout = 0
-    while (mdb1.bigchain.backlog.count({'version': '1.0'}) < 2*TX_COUNT and
-           timeout < 10):
+    #timeout = 0
+    while (mdb1.bigchain.backlog.count({'version': '1.0'}) < 2*TX_COUNT or
+           mdb2.bigchain.backlog.count({'version': '1.0'}) < 2*TX_COUNT or
+           mdb3.bigchain.backlog.count({'version': '1.0'}) < 2*TX_COUNT):
         sleep(1)
-        timeout += 1
 
     # check that mdb-1 is up to date
-    assert mdb2.bigchain.backlog.count({'version': '1.0'}) == TX_COUNT
-    assert mdb3.bigchain.backlog.count({'version': '1.0'}) == TX_COUNT
+    assert mdb2.bigchain.backlog.count({'version': '1.0'}) == 2*TX_COUNT
+    assert mdb3.bigchain.backlog.count({'version': '1.0'}) == 2*TX_COUNT
     assert mdb1.bigchain.backlog.count({'version': '1.0'}) == 2*TX_COUNT
 
-    for peer_addr, txids in peer_txids.items():
-        peer = MongoClient(host=(peer_addr[0]))
-        for txid in txids:
+    #for peer_addr, txids in peer_txids.items():
+    #    peer = MongoClient(host=(peer_addr[0]))
+    #    for txid in txids:
+    #        assert peer.bigchain.backlog.find_one({'id': txid}), txid
+    #        assert mdb1.bigchain.backlog.find_one({'id': txid}), txid
+
+    for peer in (mdb1, mdb2, mdb3):
+        for txid in all_txids:
             assert peer.bigchain.backlog.find_one({'id': txid}), txid
-            assert mdb1.bigchain.backlog.find_one({'id': txid}), txid
