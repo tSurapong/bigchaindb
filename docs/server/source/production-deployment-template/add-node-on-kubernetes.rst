@@ -209,7 +209,7 @@ contact the admin of the PRIMARY MongoDB node:
 
    $ kubectl --context ctx-1 exec -it <existing mongodb-instance-name> bash
    $ mongo --host <existing mongodb-instance-name> --port 27017 --verbose --ssl \
-     --sslCAFile /etc/mongod/ssl/ca.pem \
+     --sslCAFile /etc/mongod/ca/ca.pem \
      --sslPEMKeyFile /etc/mongod/ssl/mdb-instance.pem
 
    PRIMARY> use admin
