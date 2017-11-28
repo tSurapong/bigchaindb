@@ -15,8 +15,7 @@ from bigchaindb.common.schema import (
     validate_transaction_schema, validate_vote_schema)
 
 SUPPORTED_CRYPTOCONDITION_TYPES = ('threshold-sha-256', 'ed25519-sha-256')
-UNSUPPORTED_CRYPTOCONDITION_TYPES = (
-    'preimage-sha-256', 'prefix-sha-256', 'rsa-sha-256')
+UNSUPPORTED_CRYPTOCONDITION_TYPES = ('preimage-sha-256', 'prefix-sha-256')
 
 
 ################################################################################
@@ -112,7 +111,7 @@ def test_condition_uri_with_supported_subtype(dummy_transaction,
 
 @given(condition_uri=regex(
     r'^ni:\/\/\/sha-256;([a-zA-Z0-9_-]{0,86})\?fpt=threshold-sha-256&cost='
-    r'[0-9]+&subtypes=(preimage-sha-256|prefix-sha-256|rsa-sha-256)(?![\n])$'))
+    r'[0-9]+&subtypes=(preimage-sha-256|prefix-sha-256)(?![\n])$'))
 def test_condition_uri_with_unsupported_subtype(dummy_transaction,
                                                 condition_uri):
     dummy_transaction['outputs'][0]['condition']['uri'] = condition_uri

@@ -2,13 +2,16 @@
 payloads.
 
 """
+import binascii
 from copy import deepcopy
 from functools import reduce
 
 import base58
-from cryptoconditions import Fulfillment, ThresholdSha256, Ed25519Sha256
+from cryptoconditions import (Fulfillment, ThresholdSha256, Ed25519Sha256,
+                              RsaSha256)
 from cryptoconditions.exceptions import (
-    ParsingError, ASN1DecodeError, ASN1EncodeError, UnsupportedTypeError)
+    ParsingError, ASN1DecodeError, ASN1EncodeError, UnsupportedTypeError,
+    ValidationError)
 
 from bigchaindb.common.crypto import PrivateKey, hash_data
 from bigchaindb.common.exceptions import (KeypairMismatchException,
@@ -141,6 +144,13 @@ def _fulfillment_to_details(fulfillment):
             'public_key': base58.b58encode(fulfillment.public_key),
         }
 
+    if fulfillment.type_name == 'rsa-sha-256':
+        public_key = int(binascii.hexlify(fulfillment.modulus), 16)
+        return {
+            'type': 'rsa-sha-256',
+            'public_key': base58.b58encode_int(public_key)
+        }
+
     if fulfillment.type_name == 'threshold-sha-256':
         subconditions = [
             _fulfillment_to_details(cond['body'])
@@ -168,6 +178,16 @@ def _fulfillment_from_details(data, _depth=0):
     if data['type'] == 'ed25519-sha-256':
         public_key = base58.b58decode(data['public_key'])
         return Ed25519Sha256(public_key=public_key)
+
+    if data['type'] == 'rsa-sha-256':
+        m_int = base58.b58decode_int(data['public_key'])
+        m_bytes = m_int.to_bytes(
+            (m_int.bit_length() + 7) // 8, 'big'
+        )
+
+        rsa_sha256 = RsaSha256()
+        rsa_sha256._set_public_modulus(m_bytes)
+        return rsa_sha256
 
     if data['type'] == 'threshold-sha-256':
         threshold = ThresholdSha256(data['threshold'])
@@ -957,7 +977,12 @@ class Transaction(object):
 
         # cryptoconditions makes no assumptions of the encoding of the
         # message to sign or verify. It only accepts bytestrings
-        ffill_valid = parsed_ffill.validate(message=tx_serialized.encode())
+        try:
+            # the validation of RSA in cryptoconditions should return a boolean
+            # but instead raises and exception in case of an invalid signature
+            ffill_valid = parsed_ffill.validate(message=tx_serialized.encode())
+        except ValidationError:
+            ffill_valid = False
         return output_valid and ffill_valid
 
     def to_dict(self):
