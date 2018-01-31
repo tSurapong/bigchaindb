@@ -208,7 +208,7 @@ class BigchainDB(Bigchain):
         try:
             return transaction.validate(self, current_transactions)
         except ValidationError as e:
-            logger.warning('Invalided transaction (%s): %s', type(e).__name__, e)
+            logger.warning('Invalid transaction (%s): %s', type(e).__name__, e)
             return False
         return transaction
 
