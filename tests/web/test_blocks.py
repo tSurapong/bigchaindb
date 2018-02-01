@@ -139,6 +139,7 @@ def test_get_blocks_by_txid_and_status_endpoint(b, client):
     assert len(res.json) == 1
 
 
+@pytest.mark.tendermint
 @pytest.mark.bdb
 def test_get_blocks_by_txid_endpoint_returns_empty_list_not_found(client):
     res = client.get(BLOCKS_ENDPOINT + '?transaction_id=')
@@ -150,6 +151,7 @@ def test_get_blocks_by_txid_endpoint_returns_empty_list_not_found(client):
     assert len(res.json) == 0
 
 
+@pytest.mark.tendermint
 @pytest.mark.bdb
 def test_get_blocks_by_txid_endpoint_returns_400_bad_query_params(client):
     res = client.get(BLOCKS_ENDPOINT)

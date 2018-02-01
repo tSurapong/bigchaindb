@@ -152,6 +152,19 @@ class BigchainDB(Bigchain):
         else:
             return block
 
+    def get_blocks_status_containing_tx(self, txid):
+        """Retrieve block id containing transaction id `txid`
+
+        Args:
+            txid (str): transaction id of the transaction to query
+
+        Returns:
+            Block id list (list(int))
+        """
+        blocks = list(backend.query.get_block_with_transaction(self.connection, txid))
+        block_statuses = {block['height']: self.BLOCK_VALID for block in blocks}
+        return block_statuses
+
     def validate_transaction(self, tx):
         """Validate a transaction against the current status of the database."""
 

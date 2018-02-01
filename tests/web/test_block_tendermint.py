@@ -35,3 +35,23 @@ def test_get_block_returns_404_if_not_found(client):
 
     res = client.get(BLOCKS_ENDPOINT + '123/')
     assert res.status_code == 404
+
+
+@pytest.mark.bdb
+def test_get_block_containing_transaction(tb, client):
+    from bigchaindb import Bigchain
+
+    b = tb
+    tx = Transaction.create([b.me], [([b.me], 1)], asset={'cycle': 'hero'})
+    tx = tx.sign([b.me_private])
+    b.store_transaction(tx)
+
+    block = Block(app_hash='random_utxo',
+                  height=13,
+                  transactions=[tx.id])
+    b.store_block(block._asdict())
+
+    res = client.get('{}?transaction_id={}&status={}'.format(BLOCKS_ENDPOINT, tx.id, Bigchain.BLOCK_VALID))
+    expected_response = [block.height]
+    assert res.json == expected_response
+    assert res.status_code == 200
